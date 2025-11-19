@@ -61,7 +61,7 @@ jobs:
       # Inject environment variables so the test file knows how to connect
       env:
         DB_USERNAME: postgres
-        DB_PASSWORD: Abdulmalik12
+        DB_PASSWORD: localhost11
         DB_HOST: localhost
         DB_PORT: 5432
         DB_NAME: testin_qa
