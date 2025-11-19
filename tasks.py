@@ -139,7 +139,7 @@ def load_silver_incremental(conn, cur):
         df_new['vendor_name'] = df_new['vendorid'].map(vendor_map).fillna('Unknown')
         df_new['rate_description'] = df_new['ratecodeid'].map(rate_map).fillna('Null/unknown')
         df_new['payment_description'] = df_new['payment_type'].map(payment_map).fillna('Unknown')
-        df_new['trip_duration_minutes'] = ((df_new['tpep_dropoff_datetime'] - df_new['tpep_pickup_datetime']).dt.total_seconds() / 60).round(2)
+        df_new['trip_duration_minutes'] = ((df_new['tpep_dropoff_datetime'] - df_new['tpep_pickup_datetime']).dt.total_seconds() / 100).round(2)
 
         money_cols = ['fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'congestion_surcharge', 'airport_fee']
         for col in money_cols:

@@ -69,3 +69,6 @@ def main_orchestrator():
         if cur: cur.close()
         if conn: conn.close()
         logger.info("Database connection closed. Orchestration finished.")
+
+if __name__ == "__main__":
+    main_orchestrator()
