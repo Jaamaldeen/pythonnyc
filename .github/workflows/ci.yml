@@ -1,6 +1,5 @@
 name: ETL Pipeline CI
 
-# 1. WHEN to run: On push or pull request to these branches
 on:
   push:
     branches: [ "main", "dev" ]
@@ -10,20 +9,15 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
-    # 2. DATABASE SERVICE: Create a temp Postgres DB inside GitHub for the tests
     services:
       postgres:
         image: postgres:latest
         env:
           POSTGRES_USER: postgres
-          # Must match the password in your python script
-          POSTGRES_PASSWORD: Abdulmalik12
-          # Must match the TEST_DB_NAME in test_etl_pipeline.py
+          POSTGRES_PASSWORD: localhost11
           POSTGRES_DB: testin_qa
         ports:
           - 5432:5432
-        # Health check to wait until DB is actually ready to accept connections
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -31,34 +25,27 @@ jobs:
           --health-retries 5
 
     steps:
-    # 3. GET CODE: Download your code to the runner
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 4. SETUP PYTHON: Install Python 3.11
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: 'pip'
 
-    # 5. DEPENDENCIES: Install packages from requirements.txt
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 6. LINTING: Check for syntax errors and messy code
+   
     - name: Lint with flake8
       run: |
-        # Stop build if there are syntax errors
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Show warnings for style issues based on our .flake8 config
         flake8 . --count --exit-zero --statistics
 
-    # 7. TESTING: Run the test suite
     - name: Run Tests
-      # Inject environment variables so the test file knows how to connect
       env:
         DB_USERNAME: postgres
         DB_PASSWORD: localhost11
