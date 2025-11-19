@@ -1,28 +1,24 @@
-Ignore Virtual Environment
+
 
 .venv/
 venv/
 env/
 
-Ignore Compiled Python files
 
 pycache/
 *.py[cod]
 
-Ignore Environment Variables (Secrets)
 
 .env
 
-Ignore Data Files (Too large for GitHub)
 
 *.parquet
 *.csv
 
-Ignore Logs
+
 
 *.log
 
-Ignore IDE settings
 
 .idea/
 .vscode/
