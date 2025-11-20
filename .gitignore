@@ -1,22 +1,11 @@
-
-
 .venv/
 venv/
 env/
-
-
 pycache/
 *.py[cod]
-
-
 .env
-
-
 *.parquet
 *.csv
-
-
-
 *.log
 
 

@@ -1,7 +1,4 @@
 [flake8]
-# Allow lines up to 120 characters (standard for modern screens)
 max-line-length = 120
-# Ignore specific formatting warnings that conflict with modern Python
 ignore = E203, W503
-# Don't check these folders
 exclude = .git,__pycache__,.venv,venv
