@@ -1,116 +1,171 @@
+# 🚕 NYC Taxi Data Pipeline — Python + PostgreSQL (Medallion Architecture)
 
-**NYC Taxi Data Pipeline: Modular ETL with Medallion Architecture**
+This project is a fully-modular data pipeline that processes NYC Taxi trip data using Python and PostgreSQL.  
+It follows the Medallion Architecture (Bronze → Silver → Gold) and is built with real-world engineering principles in mind: incremental loading, metadata tracking, fault tolerance, testing, and CI/CD automation.
 
-This project implements a scalable ETL pipeline for NYC taxi trip data using the **Medallion Architecture** (**Bronze → Silver → Gold**). It leverages **PostgreSQL** for storage, modular Python code for maintainability, and automated CI/CD workflows for reliability.
+---
 
-The pipeline is designed to be **idempotent** and **fault-tolerant**, capable of handling incremental monthly loads with automated state tracking. This is an evolution of a previous project where incremental loading was implemented purely with **SQL triggers** and **idempotency checks** to avoid duplicate data.
 
-1. **Medallion Layers**
-Layer	Role	Description
-**Bronze**	Raw Ingestion	Immutable historical archive. Ingests raw Parquet files via fast bulk loading (**COPY**).
-**Silver**	Cleaned & Enriched	Single Source of Truth. Deduplicates records, enforces schema types, and adds derived metrics (e.g., **trip_duration**).
-**Gold**	Business Aggregates	BI-ready data. Contains dimensional models (**vendor_summary**, **zone_summary**) optimized for tools like **Power BI**.
+### **1. Medallion Architecture**
+Breaking the pipeline into Bronze, Silver, and Gold layers helps keep raw data separate from cleaned and aggregated data.  
+Each layer has a clear purpose:
+- **Bronze** → raw, untouched data  
+- **Silver** → cleaned, validated, feature-engineered data  
+- **Gold** → final business summaries  
 
-2. **Repository Structure**
+This makes debugging easier, transformations more transparent, and analytics more reliable.
+
+### **2. Modular Python Structure**
+the code are split into 4 parts
+- `tasks.py` contains the ETL steps  
+- `queries.py` stores all SQL  
+- `utils.py` handles helpers and retry logic  
+- `main.py` runs the pipeline  
+
+### **3. Metadata-Driven Loading**
+The pipeline keeps track of the last processed month.  
+This ensures:
+- Only new data is loaded  
+- Failed runs can resume safely  
+- The pipeline is idempotent (running it twice won’t duplicate data)
+
+### **4. CI/CD and Testing**
+A GitHub Actions workflow runs tests and linting automatically to keep the project stable and production-ready.
+
+---
+
+## 🏛️ Architecture Overview
+
+### **Bronze Layer — Raw Data**
+The raw Parquet data is loaded into PostgreSQL with minimal changes.  
+The Bronze layer acts as the ground truth of the pipeline: everything else depends on it.
+
+### **Silver Layer — Cleaned Data**
+The Silver layer standardizes and enriches the data:
+- duplicates removed  
+- invalid rows handled  
+- timestamps normalized  
+- new columns added (e.g., trip duration, speed)
+
+### **Gold Layer — Business Tables**
+The Gold layer contains aggregated results such as:
+- daily revenue  
+- vendor performance  
+- monthly trends  
+- payment behavior  
+- pickup zones  
+
+These tables are designed for dashboards and BI tools and this an example built with the result in PowerBi.
+<img width="739" height="427" alt="nyc_dashboard" src="https://github.com/user-attachments/assets/9f132944-4ed7-4221-93c0-5be628459bed" />
+
+
+## ⚙️ How the Pipeline Runs (Orchestration Logic)
+
+The orchestrator in `main.py` follows a simple flow:
+
+1. **Check metadata**  
+   Read the last successful load month.
+
+2. **Figure out the next month to process**  
+   If January was completed, the system automatically moves to February.
+
+3. **Extract**  
+   Load the raw Parquet file for that month into the Bronze layer.
+
+4. **Transform**  
+   Clean the data and apply business rules before inserting into Silver.
+
+5. **Load**  
+   Update the Gold layer using upsert method.
+
+---
+
+## 🔁 Retry Mechanism (Making the Pipeline Fault-Tolerant)
+
+Real pipelines fail — network timeouts, database locks, temporary connection issues.
+
+To handle this, the project includes a retry decorator in `utils.py`.
+
+It allows any database operation to automatically retry with a delay.  
+You can configure:
+- number of retries  
+- wait time  
+- error logging  
+- backoff strategy  
+
+If something temporary goes wrong, the pipeline doesn’t crash, it simply retries and keeps moving.
+
+
+## 🧾 Metadata Management
+
+Metadata is stored in a dedicated table that logs:
+- which month was processed  
+- execution time  
+- success/failure status  
+- any error messages  
+
+This enables:
+- incremental loading  
+- safe restarts  
+- full auditability  
+- monitoring of pipeline health  
+
+Metadata is the key reason incremental loads work reliably.
+
+## 🔄 Full Load vs Incremental Load
+
+Here’s how the two modes differ:
+
+### **Full Load**
+Used mainly during first-time setup or historical backfills.  
+It processes *all* available data from scratch.
+
+### **Incremental Load**
+The normal mode.  
+Processes only the next unprocessed month based on metadata.
+
+Incremental loads make the pipeline fast and efficient.
+
+---
+
+## 🛠️ CI/CD Overview
+uses
+- **flake8** for linting  
+- **unit tests**  
+- dependency installation  
+- general project validation  
+And without this been passed, new updates will not able to effect in the already working github code.
+
+---
+
+## 📁 Project Structure
 pythonnyc/
-├── .github/
-│   └── workflows/
-│       └── ci.yml          # CI/CD workflow definition
-├── .flake8                  # Linting configuration
-├── .gitignore
-├── **config.py**               # DB connection and basic project configuration
-├── **main.py**                 # Orchestrator for the ETL pipeline
-├── **queries.py**              # SQL queries to create tables
-├── **requirements.txt**        # Python dependencies
-├── **tasks.py**                # Core ETL logic (Extract, Transform, Load)
-├── **test_etl_pipeline.py**    # Unit and integration tests
-└── **utils.py**                # Logging, retry decorator, and helpers
+├── .github/workflows/ci.yml # CI pipeline
+├── .flake8 # Linter config
+├── config.py # DB settings & constants
+├── main.py # Pipeline entry point
+├── tasks.py # ETL logic
+├── queries.py # SQL statements
+├── utils.py # Retry logic and helpers
+├── test_etl_pipeline.py # Tests
+└── requirements.txt # Dependencies
 
-3. **Orchestration & Retry Mechanism**
-How is works.
 
-**Workflow Logic:**
 
-**Read State**: Retrieve the **last_successful_load_month** from **etl.pipeline_metadata**.
+---
 
-**Determine Next Month**: Calculate which month to process next (e.g., if Jan is done, queue Feb).
+## 📊 Example Queries from the Gold Layer
 
-**Verify & Run**: Check for the local Parquet file and insert the file into the  **Bronze table → Silver → Gold**.
+Here are some examples of insights you can pull once the pipeline runs.
 
-**Update Metadata**: Log run status (**SUCCESS** or **FAILED**) with timestamp.
-
-**Fault Tolerance:**
-
-A custom Python decorator **@with_retry** (in **utils.py**) wraps critical DB operations.
-
-**Retries**: Up to **MAX_RETRIES** (configurable).
-
-**Strategy**: Exponential backoff or fixed delay.
-
-**Observability**: Logs full stack traces to the metadata table upon final failure.
-
-4. **Loading Strategy**
-
-**Bronze & Silver (Incremental):**
-
-Processes only new monthly files based on the metadata high-water mark.
-
-**Gold (Upsert & Re-aggregation):**
-
-Uses **INSERT ... ON CONFLICT DO UPDATE** for dimensional aggregates.
-
-daily_summary tables load incrementally as partitions are independent.
-
-5. **CI/CD Pipeline (GitHub Actions)**
-
-Automated quality gates ensure that bad code never reaches production.
-
-**Triggers**: Push or Pull Request.
-
-**Pipeline Steps:**
-
-**Environment Setup**: Ubuntu runner initializes a temporary **PostgreSQL** container.
-
-**Linting**: Runs **flake8** to enforce **PEP-8** style.
-
-**Testing:**
-
-**Unit Tests**: Mock database connections to validate transformation logic.
-
-**Integration Tests**: Run against the live service container to ensure end-to-end SQL execution works correctly.
-
-6. **Analytics Examples**
-
-The **Gold** layer is optimized for analytical queries.
-
-**Monthly Revenue Trend:**
-
+### **1. Daily Revenue Trend**
 ```sql
-SELECT 
-    to_char(trip_date, 'YYYY-MM') AS month,
-    SUM(total_revenue) AS revenue,
-    SUM(total_trips) AS trips
+SELECT trip_date, total_revenue
 FROM gold.daily_summary
-GROUP BY 1
-ORDER BY 1;
-```
-
-**Vendor Efficiency Performance:**
-
-```sql
-SELECT 
-    vendor_name,
-    avg_fare,
-    avg_trip_distance,
-    (total_revenue / NULLIF(total_distance, 0)) AS revenue_per_mile
-FROM gold.vendor_summary
-ORDER BY total_revenue DESC;
-```
-**LOGGING OUTPUT**
-<img width="960" height="540" alt="AINCRE" src="https://github.com/user-attachments/assets/ea88c0a7-1f71-4252-9c9c-2096af5054aa" />
+ORDER BY trip_date;
+````
+## Example of log output doing the running of the code
+<img width="960" height="540" alt="AINCRE" src="https://github.com/user-attachments/assets/448b33dc-8a29-4d02-8c38-d1e5fb3db5b6" />
 
 
-
-Also used the gold tables to create a dashboard 
-<img width="739" height="427" alt="nyc_dashboard" src="https://github.com/user-attachments/assets/17b53a64-f27d-4b32-959e-544508a466b3" />
 
