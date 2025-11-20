@@ -1,4 +1,5 @@
 # 🚕 NYC Taxi Data Pipeline — Python + PostgreSQL (Medallion Architecture)
+<img width="670" height="387" alt="arc de" src="https://github.com/user-attachments/assets/055cb856-3120-442f-8ca7-deff53adf4e3" />
 
 This project is a fully-modular data pipeline that processes NYC Taxi trip data using Python and PostgreSQL.  
 It follows the Medallion Architecture (Bronze → Silver → Gold) and is built with real-world engineering principles in mind: incremental loading, metadata tracking, fault tolerance, testing, and CI/CD automation.
@@ -56,7 +57,8 @@ The Gold layer contains aggregated results such as:
 - pickup zones  
 
 These tables are designed for dashboards and BI tools and this an example built with the result in PowerBi.
-<img width="739" height="427" alt="nyc_dashboard" src="https://github.com/user-attachments/assets/9f132944-4ed7-4221-93c0-5be628459bed" />
+<img width="1920" height="1080" alt="Screenshot 2025-11-20 213735" src="https://github.com/user-attachments/assets/afd2bd96-fde0-417e-b332-c5bb1898ebd9" />
+
 
 
 ## ⚙️ How the Pipeline Runs (Orchestration Logic)
